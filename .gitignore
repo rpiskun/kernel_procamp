@@ -1,0 +1,10 @@
+**/*.ko
+**/*.ko.cmd
+**/*.o.cmd
+**/*.symvers
+**/*.mod.c
+**/*.mod.o
+**/*.o
+**/modules.order
+**/.tmp_versions
+**/.vscode/**
