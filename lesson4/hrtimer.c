@@ -3,17 +3,24 @@
 #include <linux/kernel.h>
 #include <linux/timer.h>
 #include <linux/jiffies.h>
+#include <linux/ktime.h>
+#include <linux/hrtimer.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Roman Piskun");
 MODULE_DESCRIPTION("Test timers");
 MODULE_VERSION("0.22");
 
+#define MS_TO_NS(ms)    (unsigned long)((ms * (unsigned long)1000 * (unsigned long)1000))
+
 static int count = 0;
+static ktime_t ktPrev;
 
 static void staticTimerExpiredCb(struct timer_list *pTmList);
+static enum hrtimer_restart myHrTimCallback(struct hrtimer *timer);
 
 static DEFINE_TIMER(myStaticTim, staticTimerExpiredCb);
+static struct hrtimer myHrTim;
 
 static void staticTimerExpiredCb(struct timer_list *pTmList)
 {
@@ -25,12 +32,31 @@ static void staticTimerExpiredCb(struct timer_list *pTmList)
     }
 }
 
+static enum hrtimer_restart myHrTimCallback(struct hrtimer *timer)
+{
+    ktime_t kt;
+
+    kt = timer->base->get_time();
+
+    printk(KERN_INFO "HR: %lld; diff: %lld\n", kt, kt - ktPrev);
+    ktPrev = kt;
+    hrtimer_forward_now(timer, ns_to_ktime(MS_TO_NS(1000)));
+
+    return HRTIMER_RESTART;
+}
+
 static int __init lesson4_init(void)
 {
+    ktime_t kt;
     myStaticTim.expires = jiffies + 2 * HZ;
     add_timer(&myStaticTim);
 
-    printk(KERN_INFO "Timer has been set up\n");
+    kt = ktime_set(0, MS_TO_NS(1000));
+    hrtimer_init(&myHrTim, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+    myHrTim.function = myHrTimCallback;
+    hrtimer_start(&myHrTim, kt, HRTIMER_MODE_REL);
+
+    printk(KERN_INFO "Timers have been set up\n");
 
     return 0;
 }
@@ -45,7 +71,15 @@ static void __exit lesson4_exit(void)
         return;
     }
 
-    printk(KERN_INFO "timer deleted\n");
+    status = hrtimer_cancel(&myHrTim);
+    if (status < 0)
+    {
+        printk(KERN_ERR "hrtimer_cancel() failed; err: %d\n", status);
+
+        return;
+    }
+
+    printk(KERN_INFO "timers deleted\n");
 
     printk(KERN_INFO "module exit\n");
 }
