@@ -5,6 +5,7 @@
 **/*.mod.c
 **/*.mod.o
 **/*.o
+**/*.c.swp
 **/modules.order
 **/.tmp_versions
 **/.vscode/**
