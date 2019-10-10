@@ -1,0 +1,2 @@
+# kbuild part of makefile
+obj-m := irq_handling.o
