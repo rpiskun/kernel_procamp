@@ -55,7 +55,7 @@ static int __init irq_hndl_module_init(void)
             irq, 
             my_main_irq_handler,
             my_quick_irq_handler,
-            IRQF_SHARED,
+            (IRQF_SHARED | IRQF_TRIGGER_FALLING),
             "lesson6",
             &uniq_dev_id);
 
